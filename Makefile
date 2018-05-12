@@ -26,5 +26,8 @@ $(BUILD_DIR)/%: $(BUILD_DIR)/%.o
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 	$(CC) -c $< -o $@
 
+$(BUILD_DIR)/ping.o: $(SRC_DIR)/ping.h
+$(BUILD_DIR)/tcputils.o: $(SRC_DIR)/tcputils.h
+
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)

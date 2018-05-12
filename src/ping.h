@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <netinet/ip_icmp.h>
 
-#define PING_PACKET_SIZE    64
+#define PING_PACKET_SIZE    256
 
 
 struct icmp_packet {
@@ -15,6 +15,6 @@ struct icmp_packet {
 void ping_main();
 
 int make_socket_icmp();
-void make_icmp_packet(char *buf, int seq_num);
+void make_ping_packet(char *buf, int seq_num);
 
 #endif

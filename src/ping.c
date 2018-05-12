@@ -42,14 +42,16 @@ int make_socket_icmp() {
 }
 
 
-void make_icmp_packet(char *buf, int seq_num) {
+void make_ping_packet(char *buf, int seq_num) {
     memset(buf, 0, PING_PACKET_SIZE);
     struct icmp_packet *packet = (struct icmp_packet *)buf;
     packet->hdr.type       = ICMP_ECHO;
     packet->hdr.un.echo.id = 4; // A random number chosen by a fair dice roll
 
+    // From the Lego Movie.
+    char *text = "Everything is awesome! Everything is cool when you're part of a team. Everything is awesome, when you are living your dream!\n";
     for (int i = 0; i < sizeof(packet->msg) - 1; i++) {
-        packet->msg[i] = i + '0';
+        packet->msg[i] = text[i % 125];
     }
     // The last byte is \0 (because of memset).
 
@@ -57,13 +59,27 @@ void make_icmp_packet(char *buf, int seq_num) {
     packet->hdr.checksum         = icmp_checksum(packet, PING_PACKET_SIZE);
 }
 
-void send_ping(in_addr_t dst) {
-  char *buf[PING_PACKET_SIZE];
+
+void send_ping(int socket, in_addr_t dst) {
+    char buf[PING_PACKET_SIZE];
+
+    make_ping_packet(buf, 0);
+
+    struct sockaddr_in addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_addr.s_addr = dst;
+    if (sendto(socket, buf, PING_PACKET_SIZE, 0,
+               (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+        perror("Could not send ping packet");
+        exit(1);
+    }
 }
 
+
 void ping_main() {
-  int socket = make_socket_icmp();
+    int socket = make_socket_icmp();
 
+    send_ping(socket, inet_addr("127.0.0.1"));
 
-  shutdown(socket, 2);
+    shutdown(socket, 2);
 }
