@@ -160,13 +160,10 @@ bool receive_udp_packet(int socket,
         ssize_t len = recvfrom(socket, buf, RECEIVE_BUF_SIZE,
                                0, NULL, NULL);
         if (len < 0) {
-            perror("Could not receive packet");
-            exit(1);
+            continue;
         }
         if (is_valid_packet(buf, src_addr, dst_addr, dst_port, src_port)) {
             return true;
-        } else {
-            continue;
         }
     } while (start_time + UDP_WAIT_TIMEOUT > time(NULL));
     return false;
