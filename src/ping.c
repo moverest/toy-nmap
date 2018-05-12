@@ -42,19 +42,28 @@ int make_socket_icmp() {
 }
 
 
-size_t make_icmp_packet(char *buf, size_t buf_size, int cnt) {
-    int i;
-
-    memset(buf, 0, buf_size);
+void make_icmp_packet(char *buf, int seq_num) {
+    memset(buf, 0, PING_PACKET_SIZE);
     struct icmp_packet *packet = (struct icmp_packet *)buf;
     packet->hdr.type       = ICMP_ECHO;
     packet->hdr.un.echo.id = 4; // A random number chosen by a fair dice roll
-    for (i = 0; i < sizeof(packet->msg) - 1; i++) {
+
+    for (int i = 0; i < sizeof(packet->msg) - 1; i++) {
         packet->msg[i] = i + '0';
     }
-    packet->msg[i] = 0;
-    packet->hdr.un.echo.sequence = cnt;
-    packet->hdr.checksum         = icmp_checksum(packet, sizeof(struct icmp_packet));
+    // The last byte is \0 (because of memset).
 
-    return sizeof(struct icmp_packet);
+    packet->hdr.un.echo.sequence = seq_num;
+    packet->hdr.checksum         = icmp_checksum(packet, PING_PACKET_SIZE);
+}
+
+void send_ping(in_addr_t dst) {
+  char *buf[PING_PACKET_SIZE];
+}
+
+void ping_main() {
+  int socket = make_socket_icmp();
+
+
+  shutdown(socket, 2);
 }

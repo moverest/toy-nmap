@@ -4,17 +4,17 @@
 #include <stdlib.h>
 #include <netinet/ip_icmp.h>
 
-#define PACKETSIZE    64
+#define PING_PACKET_SIZE    64
 
 
 struct icmp_packet {
     struct icmphdr hdr;
-    char           msg[PACKETSIZE - sizeof(struct icmphdr)];
+    char           msg[PING_PACKET_SIZE - sizeof(struct icmphdr)];
 };
 
-
+void ping_main();
 
 int make_socket_icmp();
-size_t make_icmp_packet(char *buf, size_t buf_size, int cnt);
+void make_icmp_packet(char *buf, int seq_num);
 
 #endif
