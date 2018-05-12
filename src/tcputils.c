@@ -8,6 +8,9 @@
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
+#include <netdb.h>
+#include <unistd.h>
+       #include <fcntl.h>
 
 // From the Minirighi project.
 // See: http://minirighi.sourceforge.net/html/tcp_8h-source.html
@@ -51,6 +54,8 @@ static uint16_t tcp_checksum(const void *buff, size_t len,
 }
 
 
+
+
 size_t make_tcp_packet(char *buf, size_t buf_size, int flags,
                        in_addr_t ip_src, in_addr_t ip_dst,
                        uint16_t port_src, uint16_t port_dst) {
@@ -91,6 +96,22 @@ size_t make_tcp_packet(char *buf, size_t buf_size, int flags,
     return packet_len;
 }
 
+size_t make_icmp_packet(char *buf, size_t buf_size, int cnt){
+  int i;
+  memset(buf, 0, buf_size);
+  struct icmp_packet *packet = (struct icmp_packet *) buf;
+  packet->hdr.type = ICMP_ECHO;
+  packet->hdr.un.echo.id = getpid();
+  for (i = 0; i < sizeof(packet->msg)-1; i++){
+    packet->msg[i] = i+'0';
+  }
+  packet->msg[i] = 0;
+  packet->hdr.un.echo.sequence = cnt;
+  packet->hdr.checksum = 0;
+
+  return sizeof(icmp_packet);
+}
+
 
 int read_tcp_packet(char *buf) {
     return 0;
@@ -112,6 +133,28 @@ int make_socket() {
     }
 
     return s;
+}
+
+int make_socket_icmp(){
+  struct protoent *proto = getprotobyname("ICMP");
+  int s = socket(PF_INET, SOCK_RAW, proto->p_proto);
+	if ( s < 0 )
+	{
+		perror("socket");
+		exit(1);
+	}
+
+  int value = 255;
+	if (setsockopt(s, SOL_IP, IP_TTL, &value, sizeof(value)) < 0){
+    perror("Set TTL option");
+    exit(1);
+  }
+
+	if (fcntl(s, F_SETFL, O_NONBLOCK) < 0 ){
+    perror("Request nonblocking I/O");
+    exit(1);
+  }
+  return s;
 }
 
 
