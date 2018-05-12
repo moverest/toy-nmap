@@ -4,13 +4,14 @@
 #define PING_RECV_BUF_SIZE    1024
 
 // A random number chosen by a fair dice roll
-#define PING_ECHO_ID 4
+#define PING_ECHO_ID          4
 
 #include <arpa/inet.h>
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 static unsigned short icmp_checksum(void *b, int len) {
     unsigned short *buf = b;
@@ -106,11 +107,11 @@ bool receive_ping(int socket, in_addr_t src) {
             continue;
         }
 
-        struct icmphdr* header = (struct icmphdr*) (buf + sizeof(struct iphdr));
-        if (addr.sin_addr.s_addr == src &&
-            len >= sizeof(struct icmphdr) &&
-            header->type == ICMP_ECHOREPLY &&
-            header->un.echo.id == PING_ECHO_ID) {
+        struct icmphdr *header = (struct icmphdr *)(buf + sizeof(struct iphdr));
+        if ((addr.sin_addr.s_addr == src) &&
+            (len >= sizeof(struct icmphdr)) &&
+            (header->type == ICMP_ECHOREPLY) &&
+            (header->un.echo.id == PING_ECHO_ID)) {
             return true;
         }
     } while (start_time + PING_WAIT_TIMEOUT > time(NULL));
@@ -119,13 +120,35 @@ bool receive_ping(int socket, in_addr_t src) {
 }
 
 
-void ping_main() {
+void ping_main(int argc, char **argv) {
+    if (argc != 4) {
+        printf("Usage: %s %s <local network IP address> <mask>", argv[0], argv[1]);
+        exit(1);
+    }
+
+    in_addr_t network_addr = inet_addr(argv[2]);
+    in_addr_t mask         = inet_addr(argv[3]);
+
+
+
+    in_addr_t network_addr_inverted = htonl(network_addr);
+    in_addr_t current_addr_inverted = htonl(network_addr);
+    in_addr_t mask_inverted         = htonl(mask);
+    current_addr_inverted &= mask_inverted;
+
     int socket = make_socket_icmp();
 
-    in_addr_t addr = inet_addr("128.0.0.1");
+    while (current_addr_inverted <
+           network_addr_inverted + ~mask_inverted - 1) {
+        current_addr_inverted++;
+        in_addr_t     current_addr = htonl(current_addr_inverted);
+        unsigned char *n           = (unsigned char*) &current_addr;
+        printf("%d.%d.%d.%d", n[0], n[1], n[2], n[3]);
 
-    send_ping(socket, addr);
-    printf("%d", receive_ping(socket, addr));
+        send_ping(socket, current_addr);
+        bool is_up = receive_ping(socket, current_addr);
+        printf("\t%s\n", is_up ? "\x1b[32mup\x1b[0m" : "\x1b[31mdown\x1b[0m");
+    }
 
     shutdown(socket, 2);
 }

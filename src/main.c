@@ -1,14 +1,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <arpa/inet.h>
+#include <string.h>
 
 #include "tcputils.h"
 #include "ping.h"
 
 
 int main(int argc, char **argv) {
-    ping_main();
-    return 0;
+    if (argc >= 2) {
+        if (strcmp(argv[1], "ip-scan") == 0) {
+            ping_main(argc, argv);
+            return 0;
+        }
+    }
 
     struct sockaddr_in addr;
 

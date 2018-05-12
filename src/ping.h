@@ -12,7 +12,7 @@ struct icmp_packet {
     char           msg[PING_PACKET_SIZE - sizeof(struct icmphdr)];
 };
 
-void ping_main();
+void ping_main(int argc, char **argv);
 
 int make_socket_icmp();
 void make_ping_packet(char *buf, int seq_num);
