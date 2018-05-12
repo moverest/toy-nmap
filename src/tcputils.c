@@ -124,7 +124,7 @@ void send_tcp_packet(int                socket,
     size_t packet_len = make_tcp_packet(packet_buf, PACKET_BUF_SIZE,
                                         flags,
                                         src_addr, dst_addr.sin_addr.s_addr,
-                                        ntohs(dst_addr.sin_port), src_port);
+                                        src_port, ntohs(dst_addr.sin_port));
 
     if (sendto(socket, packet_buf, packet_len, 0,
                (struct sockaddr *)&dst_addr, sizeof(dst_addr)) < 0) {

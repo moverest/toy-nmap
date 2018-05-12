@@ -8,7 +8,7 @@
 int main(int argc, char **argv) {
     struct sockaddr_in addr;
 
-    in_port_t port = 8080;
+    in_port_t port = 54500;
 
     addr.sin_family      = AF_INET;
     addr.sin_port        = htons(port);
