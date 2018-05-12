@@ -10,6 +10,8 @@
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 // From the Minirighi project.
 // See: http://minirighi.sourceforge.net/html/tcp_8h-source.html
@@ -91,11 +93,6 @@ size_t make_tcp_packet(char *buf, size_t buf_size, int flags,
                                       ip_src, ip_dst);
 
     return packet_len;
-}
-
-
-int read_tcp_packet(char *buf) {
-    return 0;
 }
 
 

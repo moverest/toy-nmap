@@ -18,13 +18,16 @@ debug: all tests
 clean:
 	rm -rvf $(BUILD_DIR) main
 
-$(BUILD_DIR)/main: $(BUILD_DIR)/tcputils.o
+$(BUILD_DIR)/main: $(foreach f, tcputils ping, $(BUILD_DIR)/$f.o)
 
 $(BUILD_DIR)/%: $(BUILD_DIR)/%.o
 	$(CC) -o $@ $(filter %.o, $^) $(LD_FLAGS)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 	$(CC) -c $< -o $@
+
+$(BUILD_DIR)/ping.o: $(SRC_DIR)/ping.h
+$(BUILD_DIR)/tcputils.o: $(SRC_DIR)/tcputils.h
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
