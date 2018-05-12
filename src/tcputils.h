@@ -8,13 +8,12 @@
 
 #define TCP_ACK_FLAG    TH_ACK
 #define TCP_SYN_FLAG    TH_SYN
-#define PACKETSIZE	64
+#define PACKETSIZE      64
 
 
-struct icmp_packet
-{
-	struct icmphdr hdr;
-	char msg[PACKETSIZE-sizeof(struct icmphdr)];
+struct icmp_packet {
+    struct icmphdr hdr;
+    char           msg[PACKETSIZE - sizeof(struct icmphdr)];
 };
 
 
