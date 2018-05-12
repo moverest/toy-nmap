@@ -84,7 +84,7 @@ size_t make_udp_packet(char *buf, size_t buf_size,
     struct udphdr *udp_header = (struct udphdr *)(buf + sizeof(struct ip));
     udp_header->uh_sport = htons(port_src);
     udp_header->uh_dport = htons(port_dst);
-    udp_header->uh_ulen   = htons(sizeof(struct udphdr));
+    udp_header->uh_ulen  = htons(sizeof(struct udphdr));
     udp_header->uh_sum   = 0;
 
     udp_header->uh_sum = udp_checksum(udp_header, sizeof(struct udphdr),
@@ -149,9 +149,9 @@ static bool is_valid_packet(char *packet,
 
 
 bool receive_udp_packet(int socket,
-                       in_addr_t src_addr, in_addr_t dst_addr,
-                       uint16_t dst_port,
-                       uint16_t src_port) {
+                        in_addr_t src_addr, in_addr_t dst_addr,
+                        uint16_t dst_port,
+                        uint16_t src_port) {
     char buf[RECEIVE_BUF_SIZE];
 
     time_t start_time = time(NULL);
@@ -163,20 +163,20 @@ bool receive_udp_packet(int socket,
             perror("Could not receive packet");
             exit(1);
         }
-        if(is_valid_packet(buf, src_addr, dst_addr, dst_port,src_port)){
-          return true;
+        if (is_valid_packet(buf, src_addr, dst_addr, dst_port, src_port)) {
+            return true;
         } else {
-          continue ;
+            continue;
         }
     } while (start_time + UDP_WAIT_TIMEOUT > time(NULL));
-    return false ;
+    return false;
 }
 
 
-static bool udp_scan_port(int socket,
-                              in_addr_t src_addr,
-                              in_addr_t dst_addr,
-                              uint16_t  port) {
+static bool udp_scan_port(int       socket,
+                          in_addr_t src_addr,
+                          in_addr_t dst_addr,
+                          uint16_t  port) {
     struct sockaddr_in addr;
 
     addr.sin_family      = AF_INET;
@@ -186,10 +186,10 @@ static bool udp_scan_port(int socket,
     send_udp_packet(socket, src_addr, addr, port);
 
     return receive_udp_packet(socket,
-                             addr.sin_addr.s_addr,
-                             src_addr,
-                             SCAN_DST_PORT,
-                             port);;
+                              addr.sin_addr.s_addr,
+                              src_addr,
+                              SCAN_DST_PORT,
+                              port);
 }
 
 
@@ -224,6 +224,4 @@ void udp_scan_main(int argc, char **argv) {
     }
 
     shutdown(s, 2);
-
-    return;
 }

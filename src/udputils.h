@@ -20,12 +20,12 @@ void send_udp_packet(int                socket,
                      struct sockaddr_in dst_addr,
                      uint16_t           src_port);
 
-bool receive_udp_packet(int socket,
-                       in_addr_t src_addr,
-                       in_addr_t dst_addr,
-                       uint16_t dst_port,
-                       uint16_t src_port
-                     );
+bool receive_udp_packet(int       socket,
+                        in_addr_t src_addr,
+                        in_addr_t dst_addr,
+                        uint16_t  dst_port,
+                        uint16_t  src_port
+                        );
 
 void udp_scan_main(int argc, char **argv);
 
