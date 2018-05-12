@@ -3,9 +3,13 @@
 #include <arpa/inet.h>
 
 #include "tcputils.h"
+#include "ping.h"
 
 
 int main(int argc, char **argv) {
+    ping_main();
+    return 0;
+
     struct sockaddr_in addr;
 
     in_port_t port = 54500;
