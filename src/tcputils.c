@@ -1,9 +1,11 @@
 #include "tcputils.h"
 
-#define PACKET_BUF_SIZE    2048
+#define PACKET_BUF_SIZE     2048
+#define RECEIVE_BUF_SIZE    4096
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
@@ -129,5 +131,61 @@ void send_tcp_packet(int                socket,
     if (sendto(socket, packet_buf, packet_len, 0,
                (struct sockaddr *)&dst_addr, sizeof(dst_addr)) < 0) {
         perror("Could not send packet");
+    }
+}
+
+
+static bool is_valid_packet(char *packet,
+                            in_addr_t src_addr, in_addr_t dst_addr,
+                            uint16_t dst_port,
+                            uint16_t *src_port,
+                            uint8_t *flags) {
+    struct ip     *ip_header  = (struct ip *)packet;
+    struct tcphdr *tcp_header = (struct tcphdr *)(packet + sizeof(struct ip));
+
+    if ((ntohs(ip_header->ip_len) < sizeof(struct ip) + sizeof(struct tcphdr)) ||
+        (ip_header->ip_p != IPPROTO_TCP) ||
+        (ip_header->ip_dst.s_addr != dst_addr) ||
+        (ip_header->ip_src.s_addr != src_addr) ||
+        (ntohs(tcp_header->th_dport) != dst_port)) {
+        return false;
+    }
+
+    if (src_port != NULL) {
+        *src_port = ntohs(tcp_header->th_sport);
+    }
+
+    if (flags != NULL) {
+        *flags = tcp_header->th_flags;
+    }
+
+    return true;
+}
+
+
+int receive_tcp_packet(int socket,
+                       in_addr_t src_addr, in_addr_t dst_addr,
+                       uint16_t dst_port,
+                       uint16_t *src_port) {
+    char buf[RECEIVE_BUF_SIZE];
+
+    while (1) {
+        ssize_t len = recvfrom(socket, buf, RECEIVE_BUF_SIZE,
+                               0, NULL, NULL);
+        if (len < 0) {
+            perror("Could not receive packet");
+            exit(1);
+        }
+
+        uint16_t recv_src_port;
+        uint8_t  recv_flags;
+        if (is_valid_packet(buf, src_addr, dst_addr, dst_port,
+                            &recv_src_port, &recv_flags)) {
+            if (src_port != NULL) {
+                *src_port = recv_src_port;
+            }
+
+            return recv_flags;
+        }
     }
 }

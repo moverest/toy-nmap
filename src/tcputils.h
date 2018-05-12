@@ -25,4 +25,9 @@ void send_tcp_packet(int                socket,
                      uint16_t           src_port,
                      int                flags);
 
+int receive_tcp_packet(int socket,
+                       in_addr_t src_addr, in_addr_t dst_addr,
+                       uint16_t dst_port,
+                       uint16_t *src_port);
+
 #endif
