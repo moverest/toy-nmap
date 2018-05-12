@@ -109,7 +109,7 @@ size_t make_icmp_packet(char *buf, size_t buf_size, int cnt) {
     packet->hdr.un.echo.sequence = cnt;
     packet->hdr.checksum         = 0;
 
-    return sizeof(icmp_packet);
+    return sizeof(struct icmp_packet);
 }
 
 
