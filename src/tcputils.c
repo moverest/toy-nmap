@@ -52,6 +52,21 @@ static uint16_t tcp_checksum(const void *buff, size_t len,
     return((uint16_t)(~sum));
 }
 
+unsigned short icmp_checksum(void *b, int len)
+{	unsigned short *buf = b;
+	unsigned int sum=0;
+	unsigned short result;
+
+	for ( sum = 0; len > 1; len -= 2 )
+		sum += *buf++;
+	if ( len == 1 )
+		sum += *(unsigned char*)buf;
+	sum = (sum >> 16) + (sum & 0xFFFF);
+	sum += (sum >> 16);
+	result = ~sum;
+	return result;
+}
+
 
 size_t make_tcp_packet(char *buf, size_t buf_size, int flags,
                        in_addr_t ip_src, in_addr_t ip_dst,
@@ -106,7 +121,7 @@ size_t make_icmp_packet(char *buf, size_t buf_size, int cnt) {
     }
     packet->msg[i] = 0;
     packet->hdr.un.echo.sequence = cnt;
-    packet->hdr.checksum         = 0;
+    packet->hdr.checksum         = icmp_checksum(packet, sizeof(struct icmp_packet));;
 
     return sizeof(struct icmp_packet);
 }

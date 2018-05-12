@@ -8,12 +8,13 @@
 
 #define TCP_ACK_FLAG    TH_ACK
 #define TCP_SYN_FLAG    TH_SYN
-#define PACKETSIZE      64
+#define PACKETSIZE	64
 
 
-struct icmp_packet {
-    struct icmphdr hdr;
-    char           msg[PACKETSIZE - sizeof(struct icmphdr)];
+struct icmp_packet
+{
+	struct icmphdr hdr;
+	char msg[PACKETSIZE-sizeof(struct icmphdr)];
 };
 
 
@@ -23,6 +24,9 @@ struct icmp_packet {
 size_t make_tcp_packet(char *buf, size_t buf_size, int flags,
                        in_addr_t ip_src, in_addr_t ip_dst,
                        uint16_t port_src, uint16_t port_dst);
+
+// make_icmp_packet creates an ICMP packet with sequence nbr = $cnt
+size_t make_icmp_packet(char *buf, size_t buf_size, int cnt);
 
 int read_tcp_packet(char *buf);
 
