@@ -142,7 +142,7 @@ void ping_main(int argc, char **argv) {
            network_addr_inverted + ~mask_inverted - 1) {
         current_addr_inverted++;
         in_addr_t     current_addr = htonl(current_addr_inverted);
-        unsigned char *n           = (unsigned char*) &current_addr;
+        unsigned char *n           = (unsigned char *)&current_addr;
         printf("%d.%d.%d.%d", n[0], n[1], n[2], n[3]);
 
         send_ping(socket, current_addr);

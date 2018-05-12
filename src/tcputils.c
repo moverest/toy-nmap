@@ -2,6 +2,7 @@
 
 #define PACKET_BUF_SIZE     2048
 #define RECEIVE_BUF_SIZE    4096
+#define SCAN_DST_PORT       13300
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -135,7 +136,7 @@ void send_tcp_packet(int                socket,
 static bool is_valid_packet(char *packet,
                             in_addr_t src_addr, in_addr_t dst_addr,
                             uint16_t dst_port,
-                            uint16_t *src_port,
+                            uint16_t src_port,
                             uint8_t *flags) {
     struct ip     *ip_header  = (struct ip *)packet;
     struct tcphdr *tcp_header = (struct tcphdr *)(packet + sizeof(struct ip));
@@ -144,12 +145,9 @@ static bool is_valid_packet(char *packet,
         (ip_header->ip_p != IPPROTO_TCP) ||
         (ip_header->ip_dst.s_addr != dst_addr) ||
         (ip_header->ip_src.s_addr != src_addr) ||
-        (ntohs(tcp_header->th_dport) != dst_port)) {
+        (ntohs(tcp_header->th_dport) != dst_port) ||
+        (ntohs(tcp_header->th_sport) != src_port)) {
         return false;
-    }
-
-    if (src_port != NULL) {
-        *src_port = ntohs(tcp_header->th_sport);
     }
 
     if (flags != NULL) {
@@ -163,7 +161,7 @@ static bool is_valid_packet(char *packet,
 int receive_tcp_packet(int socket,
                        in_addr_t src_addr, in_addr_t dst_addr,
                        uint16_t dst_port,
-                       uint16_t *src_port) {
+                       uint16_t src_port) {
     char buf[RECEIVE_BUF_SIZE];
 
     while (1) {
@@ -174,15 +172,92 @@ int receive_tcp_packet(int socket,
             exit(1);
         }
 
-        uint16_t recv_src_port;
-        uint8_t  recv_flags;
+        uint8_t recv_flags;
         if (is_valid_packet(buf, src_addr, dst_addr, dst_port,
-                            &recv_src_port, &recv_flags)) {
-            if (src_port != NULL) {
-                *src_port = recv_src_port;
-            }
-
+                            src_port, &recv_flags)) {
             return recv_flags;
         }
     }
+}
+
+
+static bool tcp_scan_port_syn(int       socket,
+                              in_addr_t src_addr,
+                              in_addr_t dst_addr,
+                              uint16_t  port) {
+    struct sockaddr_in addr;
+
+    addr.sin_family      = AF_INET;
+    addr.sin_port        = htons(port);
+    addr.sin_addr.s_addr = dst_addr;
+
+    send_tcp_packet(socket, src_addr, addr, SCAN_DST_PORT, TCP_SYN_FLAG);
+
+    int flags = receive_tcp_packet(socket,
+                                   addr.sin_addr.s_addr,
+                                   src_addr,
+                                   SCAN_DST_PORT,
+                                   port);
+
+    return flags & TCP_ACK_FLAG && flags & TCP_SYN_FLAG;
+}
+
+
+static bool tcp_scan_port_synack(int       socket,
+                                 in_addr_t src_addr,
+                                 in_addr_t dst_addr,
+                                 uint16_t  port) {
+    puts("Not implemented.");
+    exit(1);
+    return 0;
+}
+
+
+void tcp_scan_main(int argc, char **argv) {
+    if (argc <= 5) {
+        goto usage;
+    }
+
+    bool (*tcp_scan_port)(int, in_addr_t,
+                          in_addr_t, uint16_t);
+    if (strcmp(argv[2], "syn") == 0) {
+        tcp_scan_port = tcp_scan_port_syn;
+    } else if (strcmp(argv[2], "synack") == 0) {
+        tcp_scan_port = tcp_scan_port_synack;
+    } else {
+        goto usage;
+    }
+
+    uint16_t port_min = 0x0000;
+    uint16_t port_max = 0xffff;
+
+    if (argc >= 6) {
+        port_min = atoi(argv[5]);
+        port_max = port_min;
+    }
+
+    if (argc >= 7) {
+        port_max = atoi(argv[6]);
+    }
+
+    in_addr_t src_addr = inet_addr(argv[3]);
+    in_addr_t dst_addr = inet_addr(argv[4]);
+
+
+    int s = make_socket();
+
+    for (uint16_t port = port_min; port <= port_max; port++) {
+        printf("%d", port);
+        fflush(stdout);
+        bool port_is_open = tcp_scan_port(s, src_addr, dst_addr, port);
+        printf("%s", port_is_open ? "\t\x1b[32mopen\x1b[0m\n" : "\x1b[1K\r");
+    }
+
+    shutdown(s, 2);
+
+    return;
+
+usage:
+    puts("Usage:");
+    exit(1);
 }

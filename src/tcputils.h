@@ -30,6 +30,8 @@ void send_tcp_packet(int                socket,
 int receive_tcp_packet(int socket,
                        in_addr_t src_addr, in_addr_t dst_addr,
                        uint16_t dst_port,
-                       uint16_t *src_port);
+                       uint16_t src_port);
+
+void tcp_scan_main(int argc, char **argv);
 
 #endif
