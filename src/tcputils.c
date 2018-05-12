@@ -8,7 +8,6 @@
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
-#include <netdb.h>
 #include <unistd.h>
 #include <fcntl.h>
 
@@ -137,8 +136,7 @@ int make_socket() {
 
 
 int make_socket_icmp() {
-    struct protoent *proto = getprotobyname("ICMP");
-    int             s      = socket(PF_INET, SOCK_RAW, proto->p_proto);
+    int s = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
 
     if (s < 0) {
         perror("socket");
