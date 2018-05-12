@@ -52,21 +52,6 @@ static uint16_t tcp_checksum(const void *buff, size_t len,
     return((uint16_t)(~sum));
 }
 
-unsigned short icmp_checksum(void *b, int len)
-{	unsigned short *buf = b;
-	unsigned int sum=0;
-	unsigned short result;
-
-	for ( sum = 0; len > 1; len -= 2 )
-		sum += *buf++;
-	if ( len == 1 )
-		sum += *(unsigned char*)buf;
-	sum = (sum >> 16) + (sum & 0xFFFF);
-	sum += (sum >> 16);
-	result = ~sum;
-	return result;
-}
-
 
 size_t make_tcp_packet(char *buf, size_t buf_size, int flags,
                        in_addr_t ip_src, in_addr_t ip_dst,
@@ -109,29 +94,6 @@ size_t make_tcp_packet(char *buf, size_t buf_size, int flags,
 }
 
 
-size_t make_icmp_packet(char *buf, size_t buf_size, int cnt) {
-    int i;
-
-    memset(buf, 0, buf_size);
-    struct icmp_packet *packet = (struct icmp_packet *)buf;
-    packet->hdr.type       = ICMP_ECHO;
-    packet->hdr.un.echo.id = getpid();
-    for (i = 0; i < sizeof(packet->msg) - 1; i++) {
-        packet->msg[i] = i + '0';
-    }
-    packet->msg[i] = 0;
-    packet->hdr.un.echo.sequence = cnt;
-    packet->hdr.checksum         = icmp_checksum(packet, sizeof(struct icmp_packet));;
-
-    return sizeof(struct icmp_packet);
-}
-
-
-int read_tcp_packet(char *buf) {
-    return 0;
-}
-
-
 int make_socket() {
     int s = socket(PF_INET, SOCK_RAW, IPPROTO_TCP);
 
@@ -146,28 +108,6 @@ int make_socket() {
         exit(1);
     }
 
-    return s;
-}
-
-
-int make_socket_icmp() {
-    int s = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
-
-    if (s < 0) {
-        perror("socket");
-        exit(1);
-    }
-
-    int value = 255;
-    if (setsockopt(s, SOL_IP, IP_TTL, &value, sizeof(value)) < 0) {
-        perror("Set TTL option");
-        exit(1);
-    }
-
-    if (fcntl(s, F_SETFL, O_NONBLOCK) < 0) {
-        perror("Request nonblocking I/O");
-        exit(1);
-    }
     return s;
 }
 

@@ -18,7 +18,7 @@ debug: all tests
 clean:
 	rm -rvf $(BUILD_DIR) main
 
-$(BUILD_DIR)/main: $(BUILD_DIR)/tcputils.o
+$(BUILD_DIR)/main: $(foreach f, tcputils ping, $(BUILD_DIR)/$f.o)
 
 $(BUILD_DIR)/%: $(BUILD_DIR)/%.o
 	$(CC) -o $@ $(filter %.o, $^) $(LD_FLAGS)
