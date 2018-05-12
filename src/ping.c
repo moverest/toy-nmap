@@ -1,8 +1,16 @@
 #include "ping.h"
 
+#define PING_WAIT_TIMEOUT     1
+#define PING_RECV_BUF_SIZE    1024
+
+// A random number chosen by a fair dice roll
+#define PING_ECHO_ID 4
+
 #include <arpa/inet.h>
 #include <string.h>
 #include <stdio.h>
+#include <time.h>
+#include <stdbool.h>
 
 static unsigned short icmp_checksum(void *b, int len) {
     unsigned short *buf = b;
@@ -38,6 +46,14 @@ int make_socket_icmp() {
         exit(1);
     }
 
+    struct timeval tv;
+    tv.tv_sec  = 2;
+    tv.tv_usec = 0;
+    if (setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
+        perror("Could not set timeout");
+        exit(1);
+    }
+
     return s;
 }
 
@@ -46,7 +62,7 @@ void make_ping_packet(char *buf, int seq_num) {
     memset(buf, 0, PING_PACKET_SIZE);
     struct icmp_packet *packet = (struct icmp_packet *)buf;
     packet->hdr.type       = ICMP_ECHO;
-    packet->hdr.un.echo.id = 4; // A random number chosen by a fair dice roll
+    packet->hdr.un.echo.id = PING_ECHO_ID;
 
     // From the Lego Movie.
     char *text = "Everything is awesome! Everything is cool when you're part of a team. Everything is awesome, when you are living your dream!\n";
@@ -76,10 +92,40 @@ void send_ping(int socket, in_addr_t dst) {
 }
 
 
+bool receive_ping(int socket, in_addr_t src) {
+    char   buf[PING_RECV_BUF_SIZE];
+    time_t start_time = time(NULL);
+
+    do {
+        struct sockaddr_in addr;
+        socklen_t          addr_len = sizeof(addr);
+
+        ssize_t len = recvfrom(socket, buf, PING_RECV_BUF_SIZE,
+                               0, (struct sockaddr *)&addr, &addr_len);
+        if (len < 0) {
+            continue;
+        }
+
+        struct icmphdr* header = (struct icmphdr*) (buf + sizeof(struct iphdr));
+        if (addr.sin_addr.s_addr == src &&
+            len >= sizeof(struct icmphdr) &&
+            header->type == ICMP_ECHOREPLY &&
+            header->un.echo.id == PING_ECHO_ID) {
+            return true;
+        }
+    } while (start_time + PING_WAIT_TIMEOUT > time(NULL));
+
+    return false;
+}
+
+
 void ping_main() {
     int socket = make_socket_icmp();
 
-    send_ping(socket, inet_addr("127.0.0.1"));
+    in_addr_t addr = inet_addr("128.0.0.1");
+
+    send_ping(socket, addr);
+    printf("%d", receive_ping(socket, addr));
 
     shutdown(socket, 2);
 }
