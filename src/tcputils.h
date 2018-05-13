@@ -15,11 +15,7 @@ size_t make_tcp_packet(char *buf, size_t buf_size, int flags,
                        in_addr_t ip_src, in_addr_t ip_dst,
                        uint16_t port_src, uint16_t port_dst);
 
-// make_icmp_packet creates an ICMP packet with sequence nbr = $cnt
-size_t make_icmp_packet(char *buf, size_t buf_size, int cnt);
-
 int make_socket();
-int make_socket_icmp();
 
 void send_tcp_packet(int                socket,
                      in_addr_t          src_addr,
@@ -28,7 +24,8 @@ void send_tcp_packet(int                socket,
                      int                flags);
 
 int receive_tcp_packet(int socket,
-                       in_addr_t src_addr, in_addr_t dst_addr,
+                       in_addr_t src_addr,
+                       in_addr_t dst_addr,
                        uint16_t dst_port,
                        uint16_t src_port);
 
