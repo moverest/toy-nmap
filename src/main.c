@@ -19,7 +19,10 @@ int main(int argc, char **argv) {
           "<network ip> <mask>" },
         { "scan",
           scan_main,
-          "tcp-syn|tcp-synack|udp <scanner host ip> <scanned host ip> [<min port> [<max port>]]" }
+          "tcp-syn|tcp-synack|udp <scanner host ip> <scanned host ip> [<min port> [<max port>]]" },
+        { "scan",
+          scan_main,
+          "tcp-idle <scanner host ip> <scanned host ip> <zombie ip> [<min port> [<max port>]]" }
     };
 
     if (argc <= 1) {
