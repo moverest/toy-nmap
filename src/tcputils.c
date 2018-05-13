@@ -214,7 +214,7 @@ static bool tcp_scan_port_synack(int       socket,
 
 
 void tcp_scan_main(int argc, char **argv) {
-    if (argc <= 5) {
+    if (argc < 5) {
         goto usage;
     }
 
