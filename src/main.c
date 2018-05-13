@@ -42,3 +42,12 @@ usage:
     }
     return 1;
 }
+
+
+int test_get_service_port_name() {
+    for (size_t i = 0; i < 100; i++) {
+        /* code */
+        printf("Port %ld : %s\n", i, get_service_port_name(i, 0));
+    }
+    return 0;
+}
