@@ -3,10 +3,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <time.h>
 
 #include "tcputils.h"
 #include "udputils.h"
 
+#define TCP    0
+#define UDP    1
 
 typedef struct {
     uint16_t port;
@@ -448,7 +451,7 @@ usual tcp_names[] = {
     (usual) {.port = 27049, .name = "Serveur Steam"                                                                                                                 },
     (usual) {.port = 27050, .name = "Serveur Steam"                                                                                                                 },
 
-    (usual) {.port = 0,     .name = "Unknown"                                                                                                                       }
+    (usual) {.port = 0,     .name = 0                                                                                                                       }
 };
 usual udp_names[] = {
     (usual) {.port = 50,    .name = "re-mail-ck - Remote Mail Checking Protocol"                                                                                                                                                       },
@@ -558,7 +561,7 @@ usual udp_names[] = {
     (usual) {.port = 27048, .name = "Serveur Steam"                                                                                                                                                                                    },
     (usual) {.port = 27049, .name = "Serveur Steam"                                                                                                                                                                                    },
     (usual) {.port = 27050, .name = "Serveur Steam"                                                                                                                                                                                    },
-    (usual) {.port = 0,     .name = "Unknown"                                                                                                                                                                                          }
+    (usual) {.port = 0,     .name = 0                                                                                                                                                                                          }
 };
 
 bool scan_main(int argc, char **argv) {
@@ -567,31 +570,36 @@ bool scan_main(int argc, char **argv) {
         int  (*make_socket)();
         bool (*scan_port)(int, in_addr_t, in_addr_t, uint16_t, in_addr_t);
         bool uses_zombie;
+        int protocol;
     }
     scanners[] = {
         {
             "tcp-syn",
             make_tcp_socket,
             tcp_scan_port_syn,
-            false
+            false,
+            TCP
         },
         {
             "tcp-synack",
             make_tcp_socket,
             tcp_scan_port_synack,
-            false
+            false,
+            TCP
         },
         {
             "tcp-idle",
             make_tcp_socket,
             tcp_scan_port_idle,
-            true
+            true,
+            TCP
         },
         {
             "udp",
             make_udp_socket,
             udp_scan_port,
-            false
+            false,
+            UDP
         }
     };
 
@@ -637,15 +645,35 @@ bool scan_main(int argc, char **argv) {
 
 
     int s = scanners[scanner_i].make_socket();
+    int open_port_count = 0 ;
+    struct timespec start, end;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+    printf("PORT\tSTATE\tSERVICE\n");
 
     for (uint32_t port = port_min; port <= port_max; port++) {
         printf("%d", port);
         fflush(stdout);
         bool port_is_open = scanners[scanner_i].scan_port(s, src_addr, dst_addr,
                                                           port, zombie_addr);
-        printf("%s", port_is_open ? "\t\x1b[32mopen\x1b[0m\n" : "\x1b[1K\r");
+        NULL;
+        if(port_is_open){
+          open_port_count++;
+          printf("\t%s", "\x1b[32mopen\x1b[0m");
+          char * guess = get_service_port_name(port, scanners[scanner_i].protocol);
+          if(guess != 0){
+            printf("\t%s", guess);
+          }
+          printf("\n");
+        } else {
+          printf("%s", "\x1b[1K\r");
+        }
     }
 
+    clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+    printf("\n\nmyNmap done : found %d open port on host %s in %d.%d seconds\n",
+            open_port_count, argv[4],
+            (int) (end.tv_sec - start.tv_sec),
+            (int) ((end.tv_nsec - start.tv_nsec)/10000000));
     shutdown(s, 2);
 
     return true;
