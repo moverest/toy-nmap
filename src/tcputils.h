@@ -4,9 +4,14 @@
 #include <stdlib.h>
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
+#include <stdbool.h>
 
-#define TCP_ACK_FLAG    TH_ACK
-#define TCP_SYN_FLAG    TH_SYN
+#define TCP_ACK_FLAG     TH_ACK
+#define TCP_SYN_FLAG     TH_SYN
+#define TCP_RST_FLAG     TH_RST
+#define TCP_FIN_FLAG     TH_FIN
+#define TCP_URG_FLAG     TH_URG
+#define TCP_PUSH_FLAG    TH_PUSH
 
 // make_tcp_packet creates an empty TCP packet incapsulated into a IP
 // packet with the given flags.
@@ -23,11 +28,12 @@ void send_tcp_packet(int                socket,
                      uint16_t           src_port,
                      int                flags);
 
-int receive_tcp_packet(int socket,
+int receive_tcp_packet(int       socket,
                        in_addr_t src_addr,
                        in_addr_t dst_addr,
-                       uint16_t dst_port,
-                       uint16_t src_port);
+                       uint16_t  dst_port,
+                       uint16_t  src_port,
+                       bool      *did_timeout);
 
 void tcp_scan_main(int argc, char **argv);
 
