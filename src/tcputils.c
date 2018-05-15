@@ -246,7 +246,7 @@ void tcp_scan_main(int argc, char **argv) {
 
     int s = make_socket();
 
-    for (uint16_t port = port_min; port <= port_max; port++) {
+    for (uint32_t port = port_min; port <= port_max; port++) {
         printf("%d", port);
         fflush(stdout);
         bool port_is_open = tcp_scan_port(s, src_addr, dst_addr, port);
