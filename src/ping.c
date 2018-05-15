@@ -144,6 +144,7 @@ void ping_main(int argc, char **argv) {
         in_addr_t     current_addr = htonl(current_addr_inverted);
         unsigned char *n           = (unsigned char *)&current_addr;
         printf("%d.%d.%d.%d", n[0], n[1], n[2], n[3]);
+        fflush(stdout);
 
         send_ping(socket, current_addr);
         bool is_up = receive_ping(socket, current_addr);
