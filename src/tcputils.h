@@ -20,7 +20,7 @@ size_t make_tcp_packet(char *buf, size_t buf_size, int flags,
                        in_addr_t ip_src, in_addr_t ip_dst,
                        uint16_t port_src, uint16_t port_dst);
 
-int make_socket();
+int make_tcp_socket();
 
 void send_tcp_packet(int                socket,
                      in_addr_t          src_addr,
@@ -36,5 +36,15 @@ int receive_tcp_packet(int       socket,
                        bool      *did_timeout);
 
 void tcp_scan_main(int argc, char **argv);
+
+bool tcp_scan_port_synack(int       socket,
+                          in_addr_t src_addr,
+                          in_addr_t dst_addr,
+                          uint16_t  port);
+
+bool tcp_scan_port_syn(int       socket,
+                       in_addr_t src_addr,
+                       in_addr_t dst_addr,
+                       uint16_t  port);
 
 #endif
