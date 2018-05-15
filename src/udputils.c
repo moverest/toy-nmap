@@ -72,7 +72,7 @@ size_t make_udp_packet(char *buf, size_t buf_size,
     ip_header->ip_id  = htonl(13100);
     ip_header->ip_off = 0;
     ip_header->ip_ttl = 255;
-    ip_header->ip_p   = IPPROTO_TCP;
+    ip_header->ip_p   = IPPROTO_UDP;
     ip_header->ip_sum = 0; // Computed by the kernel with IP_HDRINCL.
     ip_header->ip_src = (struct in_addr){
         ip_src
@@ -207,8 +207,8 @@ void udp_scan_main(int argc, char **argv) {
         port_max = atoi(argv[5]);
     }
 
-    in_addr_t src_addr = inet_addr(argv[3]);
-    in_addr_t dst_addr = inet_addr(argv[4]);
+    in_addr_t src_addr = inet_addr(argv[2]);
+    in_addr_t dst_addr = inet_addr(argv[3]);
 
 
     int s = make_udp_socket();

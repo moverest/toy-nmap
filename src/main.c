@@ -5,6 +5,7 @@
 
 #include "tcputils.h"
 #include "ping.h"
+#include "udputils.h"
 
 
 int main(int argc, char **argv) {
@@ -20,7 +21,10 @@ int main(int argc, char **argv) {
 
         { "tcp-port-scan",
           tcp_scan_main,
-          "syn|synack <scanner host ip> <scanned host ip> [<min port> [<max port>]]" }
+          "syn|synack <scanner host ip> <scanned host ip> [<min port> [<max port>]]" },
+        { "udp-port-scan",
+          udp_scan_main,
+          "never ever ever!" }
     };
 
     if (argc <= 1) {
