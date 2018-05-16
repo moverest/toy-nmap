@@ -18,7 +18,7 @@ debug: all tests
 clean:
 	rm -rvf $(BUILD_DIR) main
 
-$(BUILD_DIR)/main: $(foreach f, tcputils ping scan, $(BUILD_DIR)/$f.o)
+$(BUILD_DIR)/main: $(foreach f, tcputils ping scan udputils, $(BUILD_DIR)/$f.o)
 
 $(BUILD_DIR)/%: $(BUILD_DIR)/%.o
 	$(CC) -o $@ $(filter %.o, $^) $(LD_FLAGS)
@@ -28,6 +28,7 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 
 $(BUILD_DIR)/ping.o: $(SRC_DIR)/ping.h
 $(BUILD_DIR)/tcputils.o: $(SRC_DIR)/tcputils.h
+$(BUILD_DIR)/udputils.o: $(SRC_DIR)/udputils.h
 $(BUILD_DIR)/scan.o: $(SRC_DIR)/scan.h
 
 $(BUILD_DIR):

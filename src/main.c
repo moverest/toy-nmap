@@ -17,7 +17,6 @@ int main(int argc, char **argv) {
         { "ip-scan",
           ping_main,
           "<network ip> <mask>" },
-
         { "scan",
           scan_main,
           "tcp-syn|tcp-synack|udp-scan <scanner host ip> <scanned host ip> [<min port> [<max port>]]" }
