@@ -3,9 +3,8 @@
 #include <arpa/inet.h>
 #include <string.h>
 
-#include "tcputils.h"
 #include "ping.h"
-#include "udputils.h"
+#include "scan.h"
 
 
 int main(int argc, char **argv) {
@@ -18,13 +17,9 @@ int main(int argc, char **argv) {
         { "ip-scan",
           ping_main,
           "<network ip> <mask>" },
-
-        { "tcp-port-scan",
-          tcp_scan_main,
-          "syn|synack <scanner host ip> <scanned host ip> [<min port> [<max port>]]" },
-        { "udp-port-scan",
-          udp_scan_main,
-          "never ever ever!" }
+        { "scan",
+          scan_main,
+          "tcp-syn|tcp-synack|udp-scan <scanner host ip> <scanned host ip> [<min port> [<max port>]]" }
     };
 
     if (argc <= 1) {

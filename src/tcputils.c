@@ -1,8 +1,9 @@
 #include "tcputils.h"
 
-#define PACKET_BUF_SIZE     2048
-#define RECEIVE_BUF_SIZE    4096
-#define SCAN_DST_PORT       13300
+#define PACKET_BUF_SIZE      2048
+#define RECEIVE_BUF_SIZE     4096
+#define SCAN_DST_PORT        13300
+#define SCAN_PORT_TIMEOUT    2
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,6 +14,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <time.h>
 
 // From the Minirighi project.
 // See: http://minirighi.sourceforge.net/html/tcp_8h-source.html
@@ -97,7 +99,7 @@ size_t make_tcp_packet(char *buf, size_t buf_size, int flags,
 }
 
 
-int make_socket() {
+int make_tcp_socket() {
     int s = socket(PF_INET, SOCK_RAW, IPPROTO_TCP);
 
     if (s < 0) {
@@ -108,6 +110,14 @@ int make_socket() {
     int value = 1;
     if (setsockopt(s, IPPROTO_IP, IP_HDRINCL, &value, sizeof(value)) < 0) {
         perror("Could not set socket options");
+        exit(1);
+    }
+
+    struct timeval tv;
+    tv.tv_sec  = SCAN_PORT_TIMEOUT;
+    tv.tv_usec = 0;
+    if (setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
+        perror("Could not set timeout");
         exit(1);
     }
 
@@ -161,30 +171,39 @@ static bool is_valid_packet(char *packet,
 int receive_tcp_packet(int socket,
                        in_addr_t src_addr, in_addr_t dst_addr,
                        uint16_t dst_port,
-                       uint16_t src_port) {
-    char buf[RECEIVE_BUF_SIZE];
+                       uint16_t src_port,
+                       bool *did_timeout) {
+    char   buf[RECEIVE_BUF_SIZE];
+    time_t start_time = time(NULL);
 
-    while (1) {
+    do {
         ssize_t len = recvfrom(socket, buf, RECEIVE_BUF_SIZE,
                                0, NULL, NULL);
         if (len < 0) {
-            perror("Could not receive packet");
-            exit(1);
+            continue;
         }
 
         uint8_t recv_flags;
         if (is_valid_packet(buf, src_addr, dst_addr, dst_port,
                             src_port, &recv_flags)) {
+            if (did_timeout != NULL) {
+                *did_timeout = false;
+            }
             return recv_flags;
         }
+    } while (start_time + SCAN_PORT_TIMEOUT > time(NULL));
+
+    if (did_timeout != NULL) {
+        *did_timeout = true;
     }
+    return 0;
 }
 
 
-static bool tcp_scan_port_syn(int       socket,
-                              in_addr_t src_addr,
-                              in_addr_t dst_addr,
-                              uint16_t  port) {
+bool tcp_scan_port_syn(int       socket,
+                       in_addr_t src_addr,
+                       in_addr_t dst_addr,
+                       uint16_t  port) {
     struct sockaddr_in addr;
 
     addr.sin_family      = AF_INET;
@@ -197,67 +216,32 @@ static bool tcp_scan_port_syn(int       socket,
                                    addr.sin_addr.s_addr,
                                    src_addr,
                                    SCAN_DST_PORT,
-                                   port);
+                                   port,
+                                   NULL);
 
     return flags & TCP_ACK_FLAG && flags & TCP_SYN_FLAG;
 }
 
 
-static bool tcp_scan_port_synack(int       socket,
-                                 in_addr_t src_addr,
-                                 in_addr_t dst_addr,
-                                 uint16_t  port) {
-    puts("Not implemented.");
-    exit(1);
-    return 0;
-}
+bool tcp_scan_port_synack(int       socket,
+                          in_addr_t src_addr,
+                          in_addr_t dst_addr,
+                          uint16_t  port) {
+    struct sockaddr_in addr;
 
+    addr.sin_family      = AF_INET;
+    addr.sin_port        = htons(port);
+    addr.sin_addr.s_addr = dst_addr;
 
-void tcp_scan_main(int argc, char **argv) {
-    if (argc < 5) {
-        goto usage;
-    }
+    send_tcp_packet(socket, src_addr, addr, SCAN_DST_PORT, TCP_PUSH_FLAG);
 
-    bool (*tcp_scan_port)(int, in_addr_t,
-                          in_addr_t, uint16_t);
-    if (strcmp(argv[2], "syn") == 0) {
-        tcp_scan_port = tcp_scan_port_syn;
-    } else if (strcmp(argv[2], "synack") == 0) {
-        tcp_scan_port = tcp_scan_port_synack;
-    } else {
-        goto usage;
-    }
+    bool did_timeout;
+    int  flags = receive_tcp_packet(socket,
+                                    addr.sin_addr.s_addr,
+                                    src_addr,
+                                    SCAN_DST_PORT,
+                                    port,
+                                    &did_timeout);
 
-    uint16_t port_min = 0x0000;
-    uint16_t port_max = 0xffff;
-
-    if (argc >= 6) {
-        port_min = atoi(argv[5]);
-        port_max = port_min;
-    }
-
-    if (argc >= 7) {
-        port_max = atoi(argv[6]);
-    }
-
-    in_addr_t src_addr = inet_addr(argv[3]);
-    in_addr_t dst_addr = inet_addr(argv[4]);
-
-
-    int s = make_socket();
-
-    for (uint32_t port = port_min; port <= port_max; port++) {
-        printf("%d", port);
-        fflush(stdout);
-        bool port_is_open = tcp_scan_port(s, src_addr, dst_addr, port);
-        printf("%s", port_is_open ? "\t\x1b[32mopen\x1b[0m\n" : "\x1b[1K\r");
-    }
-
-    shutdown(s, 2);
-
-    return;
-
-usage:
-    puts("Usage:");
-    exit(1);
+    return !(flags & TCP_RST_FLAG) && did_timeout;
 }
