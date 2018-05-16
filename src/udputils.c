@@ -135,6 +135,7 @@ void send_udp_packet(int                socket,
     }
 }
 
+
 static bool is_valid_packet(char *packet,
                             in_addr_t src_addr, in_addr_t dst_addr,
                             uint16_t dst_port,
@@ -154,15 +155,17 @@ static bool is_valid_packet(char *packet,
     return true;
 }
 
+
 static bool is_icmp_packet(char *packet,
-                            in_addr_t src_addr, in_addr_t dst_addr,
-                            uint16_t dst_port,
-                            uint16_t src_port) {
-    struct ip     *ip_header  = (struct ip *)packet;
+                           in_addr_t src_addr, in_addr_t dst_addr,
+                           uint16_t dst_port,
+                           uint16_t src_port) {
+    struct ip *ip_header = (struct ip *)packet;
+
     if ((ntohs(ip_header->ip_len) < sizeof(struct ip)) ||
         (ip_header->ip_p != IPPROTO_ICMP) ||
         (ip_header->ip_dst.s_addr != dst_addr) ||
-        (ip_header->ip_src.s_addr != src_addr) ) {
+        (ip_header->ip_src.s_addr != src_addr)) {
         return false;
     }
 
@@ -186,8 +189,8 @@ bool receive_udp_packet(int socket,
         //TODO Fix this shit, we need to receive icmp & udp packet
         if (is_valid_packet(buf, src_addr, dst_addr, dst_port, src_port)) {
             return true;
-        } else if (is_icmp_packet(buf, src_addr, dst_addr, dst_port, src_port)){
-          return false;
+        } else if (is_icmp_packet(buf, src_addr, dst_addr, dst_port, src_port)) {
+            return false;
         }
     } while (start_time + UDP_WAIT_TIMEOUT > time(NULL));
     //return false;
