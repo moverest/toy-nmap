@@ -7,7 +7,7 @@
 #include "tcputils.h"
 #include "udputils.h"
 
-void scan_main(int argc, char **argv) {
+bool scan_main(int argc, char **argv) {
     struct {
         char *name;
         int  (*make_socket)();
@@ -25,16 +25,16 @@ void scan_main(int argc, char **argv) {
             tcp_scan_port_synack
         },
         {
-          "udp",
-          make_udp_socket,
-          udp_scan_port
+            "udp",
+            make_udp_socket,
+            udp_scan_port
         }
     };
 
 
 
     if (argc < 5) {
-        goto usage;
+        return false;
     }
 
     size_t scanner_i;
@@ -45,7 +45,7 @@ void scan_main(int argc, char **argv) {
     }
 
     if (scanner_i == sizeof(scanners) / sizeof(scanners[0])) {
-        goto usage;
+        return false;
     }
 
     uint16_t port_min = 0x0000;
@@ -75,9 +75,5 @@ void scan_main(int argc, char **argv) {
 
     shutdown(s, 2);
 
-    return;
-
-usage:
-    puts("Usage:");
-    exit(1);
+    return true;
 }

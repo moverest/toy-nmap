@@ -120,10 +120,9 @@ bool receive_ping(int socket, in_addr_t src) {
 }
 
 
-void ping_main(int argc, char **argv) {
+bool ping_main(int argc, char **argv) {
     if (argc != 4) {
-        printf("Usage: %s %s <local network IP address> <mask>", argv[0], argv[1]);
-        exit(1);
+        return false;
     }
 
     in_addr_t network_addr = inet_addr(argv[2]);
@@ -152,4 +151,5 @@ void ping_main(int argc, char **argv) {
     }
 
     shutdown(socket, 2);
+    return true;
 }

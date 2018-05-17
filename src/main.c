@@ -10,7 +10,7 @@
 int main(int argc, char **argv) {
     struct {
         char *name;
-        void (*fc)(int, char **);
+        bool (*fc)(int, char **);
         char *usage;
     }
     mains[] = {
@@ -28,7 +28,9 @@ int main(int argc, char **argv) {
 
     for (int i = 0; i < (int)(sizeof(mains) / sizeof(mains[0])); i++) {
         if (strcmp(argv[1], mains[i].name) == 0) {
-            mains[i].fc(argc, argv);
+            if (!mains[i].fc(argc, argv)) {
+                goto usage;
+            }
             return 0;
         }
     }
