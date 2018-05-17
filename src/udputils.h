@@ -27,6 +27,9 @@ bool receive_udp_packet(int       socket,
                         uint16_t  src_port
                         );
 
-void udp_scan_main(int argc, char **argv);
+bool udp_scan_port(int       socket,
+                   in_addr_t src_addr,
+                   in_addr_t dst_addr,
+                   uint16_t  port);
 
 #endif

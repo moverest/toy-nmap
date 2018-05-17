@@ -198,7 +198,7 @@ bool receive_udp_packet(int socket,
 }
 
 
-static bool udp_scan_port(int       socket,
+bool udp_scan_port(int       socket,
                           in_addr_t src_addr,
                           in_addr_t dst_addr,
                           uint16_t  port) {
@@ -215,38 +215,4 @@ static bool udp_scan_port(int       socket,
                               src_addr,
                               SCAN_DST_PORT,
                               port);
-}
-
-
-void udp_scan_main(int argc, char **argv) {
-    if (argc < 4) {
-        puts("OMG WTF BBQ");
-    }
-
-    uint16_t port_min = 0x0000;
-    uint16_t port_max = 0xffff;
-
-    if (argc >= 5) {
-        port_min = atoi(argv[4]);
-        port_max = port_min;
-    }
-
-    if (argc >= 6) {
-        port_max = atoi(argv[5]);
-    }
-
-    in_addr_t src_addr = inet_addr(argv[2]);
-    in_addr_t dst_addr = inet_addr(argv[3]);
-
-
-    int s = make_udp_socket();
-
-    for (uint32_t port = port_min; port <= port_max; port++) {
-        printf("%d", port);
-        fflush(stdout);
-        bool port_is_open = udp_scan_port(s, src_addr, dst_addr, port);
-        printf("%s", port_is_open ? "\t\x1b[32mopen|filtered\x1b[0m\n" : "\x1b[1K\r");
-    }
-
-    shutdown(s, 2);
 }

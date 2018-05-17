@@ -5,6 +5,7 @@
 #include <stdbool.h>
 
 #include "tcputils.h"
+#include "udputils.h"
 
 void scan_main(int argc, char **argv) {
     struct {
@@ -22,6 +23,11 @@ void scan_main(int argc, char **argv) {
             "tcp-synack",
             make_tcp_socket,
             tcp_scan_port_synack
+        },
+        {
+          "udp",
+          make_udp_socket,
+          udp_scan_port
         }
     };
 
