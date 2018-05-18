@@ -201,7 +201,8 @@ bool receive_udp_packet(int socket,
 bool udp_scan_port(int       socket,
                    in_addr_t src_addr,
                    in_addr_t dst_addr,
-                   uint16_t  port) {
+                   uint16_t  port,
+                   in_addr_t zombie_addr) {
     struct sockaddr_in addr;
 
     addr.sin_family      = AF_INET;

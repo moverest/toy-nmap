@@ -40,11 +40,13 @@ void tcp_scan_main(int argc, char **argv);
 bool tcp_scan_port_synack(int       socket,
                           in_addr_t src_addr,
                           in_addr_t dst_addr,
-                          uint16_t  port);
+                          uint16_t  port,
+                          in_addr_t zombie_addr);
 
 bool tcp_scan_port_syn(int       socket,
                        in_addr_t src_addr,
                        in_addr_t dst_addr,
-                       uint16_t  port);
+                       uint16_t  port,
+                       in_addr_t zombie_addr);
 
 #endif

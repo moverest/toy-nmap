@@ -11,23 +11,27 @@ bool scan_main(int argc, char **argv) {
     struct {
         char *name;
         int  (*make_socket)();
-        bool (*scan_port)(int, in_addr_t, in_addr_t, uint16_t);
+        bool (*scan_port)(int, in_addr_t, in_addr_t, uint16_t, in_addr_t);
+        bool uses_zombie;
     }
     scanners[] = {
         {
             "tcp-syn",
             make_tcp_socket,
-            tcp_scan_port_syn
+            tcp_scan_port_syn,
+            false
         },
         {
             "tcp-synack",
             make_tcp_socket,
-            tcp_scan_port_synack
+            tcp_scan_port_synack,
+            false
         },
         {
             "udp",
             make_udp_socket,
-            udp_scan_port
+            udp_scan_port,
+            false
         }
     };
 
@@ -48,20 +52,28 @@ bool scan_main(int argc, char **argv) {
         return false;
     }
 
+
+    in_addr_t src_addr    = inet_addr(argv[3]);
+    in_addr_t dst_addr    = inet_addr(argv[4]);
+    in_addr_t zombie_addr = 0;
+    int       offset      = 0;
+
+    if (scanners[scanner_i].uses_zombie) {
+        inet_addr(argv[5]);
+        offset = 1;
+    }
+
     uint16_t port_min = 0x0000;
     uint16_t port_max = 0xffff;
 
-    if (argc >= 6) {
-        port_min = atoi(argv[5]);
+    if (argc >= 6 + offset) {
+        port_min = atoi(argv[5 + offset]);
         port_max = port_min;
     }
 
-    if (argc >= 7) {
-        port_max = atoi(argv[6]);
+    if (argc >= 7 + offset) {
+        port_max = atoi(argv[6 + offset]);
     }
-
-    in_addr_t src_addr = inet_addr(argv[3]);
-    in_addr_t dst_addr = inet_addr(argv[4]);
 
 
     int s = scanners[scanner_i].make_socket();
@@ -69,7 +81,8 @@ bool scan_main(int argc, char **argv) {
     for (uint32_t port = port_min; port <= port_max; port++) {
         printf("%d", port);
         fflush(stdout);
-        bool port_is_open = scanners[scanner_i].scan_port(s, src_addr, dst_addr, port);
+        bool port_is_open = scanners[scanner_i].scan_port(s, src_addr, dst_addr,
+                                                          port, zombie_addr);
         printf("%s", port_is_open ? "\t\x1b[32mopen\x1b[0m\n" : "\x1b[1K\r");
     }
 
