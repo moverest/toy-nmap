@@ -151,7 +151,7 @@ static bool is_valid_packet(char *packet,
                             uint16_t dst_port,
                             uint16_t src_port,
                             uint8_t *flags,
-                            uint32_t *tcp_seq) {
+                            uint16_t *ip_id) {
     struct ip     *ip_header  = (struct ip *)packet;
     struct tcphdr *tcp_header = (struct tcphdr *)(packet + sizeof(struct ip));
 
@@ -168,8 +168,8 @@ static bool is_valid_packet(char *packet,
         *flags = tcp_header->th_flags;
     }
 
-    if (tcp_seq != NULL) {
-        *tcp_seq = tcp_header->th_seq;
+    if (ip_id != NULL) {
+        *ip_id = ip_header->ip_id;
     }
 
     return true;
@@ -181,7 +181,7 @@ static int receive_tcp_packet(int socket,
                               uint16_t dst_port,
                               uint16_t src_port,
                               bool *did_timeout,
-                              uint32_t *tcp_seq) {
+                              uint16_t *ip_id) {
     char   buf[RECEIVE_BUF_SIZE];
     time_t start_time = time(NULL);
 
@@ -194,7 +194,7 @@ static int receive_tcp_packet(int socket,
 
         uint8_t recv_flags;
         if (is_valid_packet(buf, src_addr, dst_addr, dst_port,
-                            src_port, &recv_flags, tcp_seq)) {
+                            src_port, &recv_flags, ip_id)) {
             if (did_timeout != NULL) {
                 *did_timeout = false;
             }
@@ -276,14 +276,14 @@ bool tcp_scan_port_idle(int       socket,
                     TCP_SYN_FLAG | TCP_ACK_FLAG);
 
     bool     did_timeout;
-    uint32_t initial_seq_num;
+    uint16_t initial_id;
     int      flags = receive_tcp_packet(socket,
                                         zombie_addr,
                                         src_addr,
                                         SCAN_DST_PORT,
                                         port,
                                         &did_timeout,
-                                        &initial_seq_num);
+                                        &initial_id);
 
     if (did_timeout) {
         fprintf(stderr, "Zombie timeout 1.\n");
@@ -308,14 +308,14 @@ bool tcp_scan_port_idle(int       socket,
                     TCP_SYN_FLAG | TCP_ACK_FLAG);
 
 
-    uint32_t seq_num;
+    uint16_t id;
     flags = receive_tcp_packet(socket,
                                zombie_addr,
                                src_addr,
                                SCAN_DST_PORT,
                                port,
                                &did_timeout,
-                               &seq_num);
+                               &id);
 
-    return !did_timeout && seq_num - 2 == initial_seq_num && flags & TCP_RST_FLAG;
+    return !did_timeout && id - 2 == initial_id && flags & TCP_RST_FLAG;
 }
