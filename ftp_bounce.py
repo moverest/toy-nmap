@@ -49,6 +49,8 @@ def main(ftp_host, ftp_port, host, ports):
         else:
             sys.stdout.write("\x1b[1K\r")
 
+    s.close()
+
 if __name__ == '__main__':
     ftp_host = sys.argv[1]
     ftp_port = int(sys.argv[2])
