@@ -58,9 +58,12 @@ static uint16_t tcp_checksum(const void *buff, size_t len,
 }
 
 
-size_t make_tcp_packet(char *buf, size_t buf_size, int flags,
-                       in_addr_t ip_src, in_addr_t ip_dst,
-                       uint16_t port_src, uint16_t port_dst) {
+// make_tcp_packet creates an empty TCP packet incapsulated into a IP
+// packet with the given flags.
+// Returns the length of the packet
+static size_t make_tcp_packet(char *buf, size_t buf_size, int flags,
+                              in_addr_t ip_src, in_addr_t ip_dst,
+                              uint16_t port_src, uint16_t port_dst) {
     memset(buf, 0, buf_size);
     size_t packet_len = sizeof(struct ip) + sizeof(struct tcphdr);
 
@@ -125,11 +128,11 @@ int make_tcp_socket() {
 }
 
 
-void send_tcp_packet(int                socket,
-                     in_addr_t          src_addr,
-                     struct sockaddr_in dst_addr,
-                     uint16_t           src_port,
-                     int                flags) {
+static void send_tcp_packet(int                socket,
+                            in_addr_t          src_addr,
+                            struct sockaddr_in dst_addr,
+                            uint16_t           src_port,
+                            int                flags) {
     char   packet_buf[PACKET_BUF_SIZE];
     size_t packet_len = make_tcp_packet(packet_buf, PACKET_BUF_SIZE,
                                         flags,
@@ -168,11 +171,11 @@ static bool is_valid_packet(char *packet,
 }
 
 
-int receive_tcp_packet(int socket,
-                       in_addr_t src_addr, in_addr_t dst_addr,
-                       uint16_t dst_port,
-                       uint16_t src_port,
-                       bool *did_timeout) {
+static int receive_tcp_packet(int socket,
+                              in_addr_t src_addr, in_addr_t dst_addr,
+                              uint16_t dst_port,
+                              uint16_t src_port,
+                              bool *did_timeout) {
     char   buf[RECEIVE_BUF_SIZE];
     time_t start_time = time(NULL);
 
@@ -246,4 +249,13 @@ bool tcp_scan_port_synack(int       socket,
                                     &did_timeout);
 
     return !(flags & TCP_RST_FLAG) && did_timeout;
+}
+
+
+bool tcp_scan_port_idle(int       socket,
+                        in_addr_t src_addr,
+                        in_addr_t dst_addr,
+                        uint16_t  port,
+                        in_addr_t zombie_addr) {
+    return true;
 }
