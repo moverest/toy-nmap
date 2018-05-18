@@ -28,6 +28,12 @@ bool scan_main(int argc, char **argv) {
             false
         },
         {
+            "tcp-idle",
+            make_tcp_socket,
+            tcp_scan_port_idle,
+            true
+        },
+        {
             "udp",
             make_udp_socket,
             udp_scan_port,
@@ -59,8 +65,8 @@ bool scan_main(int argc, char **argv) {
     int       offset      = 0;
 
     if (scanners[scanner_i].uses_zombie) {
-        inet_addr(argv[5]);
-        offset = 1;
+        zombie_addr = inet_addr(argv[5]);
+        offset      = 1;
     }
 
     uint16_t port_min = 0x0000;

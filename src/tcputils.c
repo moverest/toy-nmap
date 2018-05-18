@@ -150,7 +150,8 @@ static bool is_valid_packet(char *packet,
                             in_addr_t src_addr, in_addr_t dst_addr,
                             uint16_t dst_port,
                             uint16_t src_port,
-                            uint8_t *flags) {
+                            uint8_t *flags,
+                            uint32_t *tcp_seq) {
     struct ip     *ip_header  = (struct ip *)packet;
     struct tcphdr *tcp_header = (struct tcphdr *)(packet + sizeof(struct ip));
 
@@ -167,6 +168,10 @@ static bool is_valid_packet(char *packet,
         *flags = tcp_header->th_flags;
     }
 
+    if (tcp_seq != NULL) {
+        *tcp_seq = tcp_header->th_seq;
+    }
+
     return true;
 }
 
@@ -175,7 +180,8 @@ static int receive_tcp_packet(int socket,
                               in_addr_t src_addr, in_addr_t dst_addr,
                               uint16_t dst_port,
                               uint16_t src_port,
-                              bool *did_timeout) {
+                              bool *did_timeout,
+                              uint32_t *tcp_seq) {
     char   buf[RECEIVE_BUF_SIZE];
     time_t start_time = time(NULL);
 
@@ -188,7 +194,7 @@ static int receive_tcp_packet(int socket,
 
         uint8_t recv_flags;
         if (is_valid_packet(buf, src_addr, dst_addr, dst_port,
-                            src_port, &recv_flags)) {
+                            src_port, &recv_flags, tcp_seq)) {
             if (did_timeout != NULL) {
                 *did_timeout = false;
             }
@@ -199,6 +205,7 @@ static int receive_tcp_packet(int socket,
     if (did_timeout != NULL) {
         *did_timeout = true;
     }
+
     return 0;
 }
 
@@ -221,6 +228,7 @@ bool tcp_scan_port_syn(int       socket,
                                    src_addr,
                                    SCAN_DST_PORT,
                                    port,
+                                   NULL,
                                    NULL);
 
     return flags & TCP_ACK_FLAG && flags & TCP_SYN_FLAG;
@@ -246,7 +254,8 @@ bool tcp_scan_port_synack(int       socket,
                                     src_addr,
                                     SCAN_DST_PORT,
                                     port,
-                                    &did_timeout);
+                                    &did_timeout,
+                                    NULL);
 
     return !(flags & TCP_RST_FLAG) && did_timeout;
 }
@@ -257,5 +266,56 @@ bool tcp_scan_port_idle(int       socket,
                         in_addr_t dst_addr,
                         uint16_t  port,
                         in_addr_t zombie_addr) {
-    return true;
+    struct sockaddr_in z_addr = {
+        .sin_family      = AF_INET,
+        .sin_port        = htons(port),
+        .sin_addr.s_addr = zombie_addr
+    };
+
+    send_tcp_packet(socket, src_addr, z_addr, SCAN_DST_PORT,
+                    TCP_SYN_FLAG | TCP_ACK_FLAG);
+
+    bool     did_timeout;
+    uint32_t initial_seq_num;
+    int      flags = receive_tcp_packet(socket,
+                                        zombie_addr,
+                                        src_addr,
+                                        SCAN_DST_PORT,
+                                        port,
+                                        &did_timeout,
+                                        &initial_seq_num);
+
+    if (did_timeout) {
+        fprintf(stderr, "Zombie timeout 1.\n");
+        exit(1);
+    }
+
+    if (!(flags & TCP_RST_FLAG)) {
+        fprintf(stderr, "Zombie did not reply with RST flag.\n");
+        exit(1);
+    }
+
+
+
+    struct sockaddr_in addr = {
+        .sin_family      = AF_INET,
+        .sin_port        = htons(port),
+        .sin_addr.s_addr = dst_addr
+    };
+    send_tcp_packet(socket, zombie_addr, addr, SCAN_DST_PORT, TCP_SYN_FLAG);
+    usleep(100000);
+    send_tcp_packet(socket, src_addr, z_addr, SCAN_DST_PORT,
+                    TCP_SYN_FLAG | TCP_ACK_FLAG);
+
+
+    uint32_t seq_num;
+    flags = receive_tcp_packet(socket,
+                               zombie_addr,
+                               src_addr,
+                               SCAN_DST_PORT,
+                               port,
+                               &did_timeout,
+                               &seq_num);
+
+    return !did_timeout && seq_num - 2 == initial_seq_num && flags & TCP_RST_FLAG;
 }
